@@ -12,7 +12,7 @@ export interface Article {
   source_domain: string | null;
   content_html: string | null;
   content_text: string | null;
-  type: "bookmarklet" | "paste";
+  type: "bookmarklet" | "paste" | "email";
   word_count: number | null;
   created_at: string;
 }

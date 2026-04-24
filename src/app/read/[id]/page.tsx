@@ -74,7 +74,7 @@ export default async function ReadPage({
           </div>
         </header>
 
-        {article.type === "bookmarklet" && article.content_html ? (
+        {(article.type === "bookmarklet" || article.type === "email") && article.content_html ? (
           <div
             className="prose prose-lg prose-gray max-w-none"
             dangerouslySetInnerHTML={{ __html: article.content_html }}
