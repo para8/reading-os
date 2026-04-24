@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest . --typescript --tailwind --app --src-dir --no-eslint --import-alias \"@/*\" --yes)",
+      "Read(//private/tmp/**)",
+      "Bash(npx create-next-app@latest readingos --typescript --tailwind --app --src-dir --no-eslint --import-alias \"@/*\" --yes)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(echo \"dev server PID: $!\")",
+      "Bash(curl -s http://localhost:3000/api/save -X OPTIONS -H \"Origin: https://example.com\" -w \"\\\\nHTTP %{http_code}\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/save -H 'Content-Type: application/json' -d '{\"type\":\"paste\",\"text\":\"This is a test article. It has multiple sentences and some content to verify the save flow works end to end.\",\"title\":\"Test Article\",\"sourceUrl\":\"https://example.com\"}' -w '\\\\nHTTP %{http_code}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/save -H 'Content-Type: application/json' -d '{\"type\":\"paste\"}' -w '\\\\nHTTP %{http_code}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/save -H 'Content-Type: application/json' -d '{}' -w '\\\\nHTTP %{http_code}')"
+    ]
+  }
+}
