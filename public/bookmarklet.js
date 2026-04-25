@@ -1,6 +1,7 @@
 // Human-readable bookmarklet source. Minified version is generated in BookmarkletInstaller.tsx.
+// The token is embedded per-user in the API URL when the bookmarklet is installed.
 (function () {
-  var API = "REPLACE_WITH_APP_URL/api/save";
+  var API = "REPLACE_WITH_APP_URL/api/bookmarklet?token=REPLACE_WITH_USER_TOKEN";
 
   var toast = document.createElement("div");
   toast.style.cssText =
@@ -26,7 +27,6 @@
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      type: "bookmarklet",
       html: document.documentElement.outerHTML,
       sourceUrl: location.href,
       title: document.title,
