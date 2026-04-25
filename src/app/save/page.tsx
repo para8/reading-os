@@ -8,8 +8,9 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export default async function SavePage() {
-  const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = (
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  ).replace(/\/$/, "");
 
   const serverClient = await createSupabaseServerClient();
   const { data: { user } } = await serverClient.auth.getUser();

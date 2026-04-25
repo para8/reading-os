@@ -30,7 +30,9 @@ export async function proxy(request: NextRequest) {
   const isPublic =
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth/callback") ||
-    pathname.startsWith("/api/save");
+    pathname.startsWith("/api/save") ||
+    pathname.startsWith("/api/bookmarklet") ||
+    pathname.startsWith("/api/email");
 
   if (!user && !isPublic) {
     return NextResponse.redirect(new URL("/login", request.url));
