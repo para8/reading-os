@@ -2,7 +2,6 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { parseHtml } from "@/lib/readability";
 
 function corsHeaders(origin: string | null) {
@@ -23,22 +22,30 @@ export async function OPTIONS(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const origin = req.headers.get("origin");
-  const serverClient = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await serverClient.auth.getUser();
+  const token = req.nextUrl.searchParams.get("token");
 
-  if (!user) {
+  if (!token) {
     return NextResponse.json(
-      { error: "Unauthorized" },
+      { error: "Missing token" },
+      { status: 401, headers: corsHeaders(origin) }
+    );
+  }
+
+  const { data: tokenRow } = await supabase
+    .from("user_tokens")
+    .select("user_id")
+    .eq("bookmarklet_token", token)
+    .single();
+
+  if (!tokenRow) {
+    return NextResponse.json(
+      { error: "Invalid token" },
       { status: 401, headers: corsHeaders(origin) }
     );
   }
 
   let body: {
-    type?: string;
     html?: string;
-    text?: string;
     title?: string;
     sourceUrl?: string;
   };
@@ -52,25 +59,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { type, html, text, title, sourceUrl } = body;
+  const { html, title, sourceUrl } = body;
 
-  if (!type || (type !== "bookmarklet" && type !== "paste")) {
+  if (!html) {
     return NextResponse.json(
-      { error: "type must be 'bookmarklet' or 'paste'" },
-      { status: 400, headers: corsHeaders(origin) }
-    );
-  }
-
-  if (type === "bookmarklet" && !html) {
-    return NextResponse.json(
-      { error: "html is required for bookmarklet type" },
-      { status: 400, headers: corsHeaders(origin) }
-    );
-  }
-
-  if (type === "paste" && !text) {
-    return NextResponse.json(
-      { error: "text is required for paste type" },
+      { error: "html is required" },
       { status: 400, headers: corsHeaders(origin) }
     );
   }
@@ -84,42 +77,27 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  let insertData: Record<string, unknown>;
+  const parsed = parseHtml(html, sourceUrl || "https://example.com");
+  if (!parsed) {
+    return NextResponse.json(
+      { error: "Could not parse article content" },
+      { status: 422, headers: corsHeaders(origin) }
+    );
+  }
 
-  if (type === "bookmarklet") {
-    const parsed = parseHtml(html!, sourceUrl || "https://example.com");
-    if (!parsed) {
-      return NextResponse.json(
-        { error: "Could not parse article content" },
-        { status: 422, headers: corsHeaders(origin) }
-      );
-    }
-    const wordCount = (parsed.textContent || "").trim().split(/\s+/).filter(Boolean).length;
-    insertData = {
+  const wordCount = (parsed.textContent || "").trim().split(/\s+/).filter(Boolean).length;
+
+  const { data, error } = await supabase
+    .from("articles")
+    .insert({
       title: title || parsed.title || "Untitled",
       source_url: sourceUrl || null,
       source_domain: sourceDomain,
       content_html: parsed.content,
       type: "bookmarklet",
       word_count: wordCount,
-      user_id: user.id,
-    };
-  } else {
-    const wordCount = text!.trim().split(/\s+/).filter(Boolean).length;
-    insertData = {
-      title: title?.trim() || "Untitled",
-      source_url: sourceUrl || null,
-      source_domain: sourceDomain,
-      content_text: text,
-      type: "paste",
-      word_count: wordCount,
-      user_id: user.id,
-    };
-  }
-
-  const { data, error } = await supabase
-    .from("articles")
-    .insert(insertData)
+      user_id: tokenRow.user_id,
+    })
     .select("id, title")
     .single();
 

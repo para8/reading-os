@@ -1,10 +1,33 @@
 import Link from "next/link";
 import PasteForm from "@/components/PasteForm";
 import BookmarkletInstaller from "@/components/BookmarkletInstaller";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { supabase } from "@/lib/supabase";
+import { redirect } from "next/navigation";
 
-export default function SavePage() {
+export const dynamic = "force-dynamic";
+
+export default async function SavePage() {
   const appUrl =
     process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  const serverClient = await createSupabaseServerClient();
+  const { data: { user } } = await serverClient.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  const { data: existing } = await supabase
+    .from("user_tokens")
+    .select("bookmarklet_token")
+    .eq("user_id", user.id)
+    .single();
+
+  let token = existing?.bookmarklet_token as string | undefined;
+
+  if (!token) {
+    token = crypto.randomUUID();
+    await supabase.from("user_tokens").insert({ user_id: user.id, bookmarklet_token: token });
+  }
 
   return (
     <main className="min-h-screen px-4 py-12">
@@ -26,7 +49,7 @@ export default function SavePage() {
         </header>
 
         <div className="space-y-8">
-          <BookmarkletInstaller appUrl={appUrl} />
+          <BookmarkletInstaller appUrl={appUrl} token={token} />
 
           <div>
             <h2 className="text-base font-semibold text-gray-900 mb-1">

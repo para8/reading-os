@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import TagEditor from "@/components/TagEditor";
+import ArticleContent from "@/components/ArticleContent";
+import type { Highlight } from "@/lib/supabase";
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-US", {
@@ -17,16 +20,24 @@ function readTime(wordCount: number | null) {
 
 export default async function ReadPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ highlight?: string }>;
 }) {
   const { id } = await params;
+  const { highlight: focusHighlightId } = await searchParams;
 
-  const { data: article } = await supabase
-    .from("articles")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const supabase = await createSupabaseServerClient();
+
+  const [{ data: article }, { data: highlights }] = await Promise.all([
+    supabase.from("articles").select("*").eq("id", id).single(),
+    supabase
+      .from("highlights")
+      .select("*")
+      .eq("article_id", id)
+      .order("start_offset"),
+  ]);
 
   if (!article) notFound();
 
@@ -72,23 +83,25 @@ export default async function ReadPage({
               </>
             )}
           </div>
+          <div className="mt-3 space-y-1">
+            <TagEditor
+              articleId={article.id}
+              initialTags={article.source_tags ?? []}
+              label="source"
+            />
+            <TagEditor
+              articleId={article.id}
+              initialTags={article.theme_tags ?? []}
+              label="theme"
+            />
+          </div>
         </header>
 
-        {(article.type === "bookmarklet" || article.type === "email") && article.content_html ? (
-          <div
-            className="prose prose-lg prose-gray max-w-none"
-            dangerouslySetInnerHTML={{ __html: article.content_html }}
-          />
-        ) : (
-          <div className="prose prose-lg prose-gray max-w-none">
-            {(article.content_text || "")
-              .split(/\n\n+/)
-              .filter(Boolean)
-              .map((para: string, i: number) => (
-                <p key={i}>{para}</p>
-              ))}
-          </div>
-        )}
+        <ArticleContent
+          article={article}
+          initialHighlights={(highlights as Highlight[]) ?? []}
+          focusHighlightId={focusHighlightId}
+        />
       </article>
     </main>
   );

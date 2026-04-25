@@ -15,4 +15,17 @@ export interface Article {
   type: "bookmarklet" | "paste" | "email";
   word_count: number | null;
   created_at: string;
+  source_tags: string[];
+  theme_tags: string[];
+  user_id: string | null;
+}
+
+export interface Highlight {
+  id: string;
+  article_id: string;
+  user_id: string;
+  text: string;
+  start_offset: number;
+  end_offset: number;
+  created_at: string;
 }

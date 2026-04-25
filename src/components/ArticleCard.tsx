@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { Article } from "@/lib/supabase";
+import TagEditor from "./TagEditor";
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-US", {
@@ -19,7 +22,14 @@ export default function ArticleCard({
 }: {
   article: Pick<
     Article,
-    "id" | "title" | "source_domain" | "created_at" | "word_count" | "type"
+    | "id"
+    | "title"
+    | "source_domain"
+    | "created_at"
+    | "word_count"
+    | "type"
+    | "source_tags"
+    | "theme_tags"
   >;
 }) {
   return (
@@ -42,6 +52,19 @@ export default function ArticleCard({
           )}
         </div>
       </Link>
+
+      <div className="mt-1.5 space-y-0.5">
+        <TagEditor
+          articleId={article.id}
+          initialTags={article.source_tags}
+          label="source"
+        />
+        <TagEditor
+          articleId={article.id}
+          initialTags={article.theme_tags}
+          label="theme"
+        />
+      </div>
     </article>
   );
 }
