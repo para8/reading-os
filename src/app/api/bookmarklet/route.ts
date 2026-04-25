@@ -2,7 +2,6 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { parseHtml } from "@/lib/readability";
 
 function corsHeaders(origin: string | null) {
   return {
@@ -77,6 +76,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const { parseHtml } = await import("@/lib/readability");
   const parsed = parseHtml(html, sourceUrl || "https://example.com");
   if (!parsed) {
     return NextResponse.json(
