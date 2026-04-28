@@ -10,6 +10,7 @@ type HighlightWithArticle = Highlight & {
     id: string;
     title: string;
     source_domain: string | null;
+    note: string | null;
   } | null;
 };
 
@@ -17,6 +18,7 @@ type ArticleGroup = {
   articleId: string;
   title: string;
   sourceDomain: string | null;
+  note: string | null;
   count: number;
   mostRecent: string;
   highlights: Highlight[];
@@ -33,6 +35,7 @@ function groupByArticle(highlights: HighlightWithArticle[]): ArticleGroup[] {
         articleId: h.articles.id,
         title: h.articles.title,
         sourceDomain: h.articles.source_domain,
+        note: h.articles.note,
         count: 0,
         mostRecent: h.created_at,
         highlights: [],
@@ -61,7 +64,7 @@ export default async function HighlightsPage() {
   const { data } = await supabase
     .from("highlights")
     .select(
-      "id, text, start_offset, end_offset, created_at, article_id, user_id, articles(id, title, source_domain)"
+      "id, text, start_offset, end_offset, created_at, article_id, user_id, articles(id, title, source_domain, note)"
     )
     .order("created_at", { ascending: false });
 
@@ -69,20 +72,30 @@ export default async function HighlightsPage() {
   const groups = groupByArticle(highlights);
 
   return (
-    <main className="min-h-screen bg-white px-4 py-16">
+    <main className="min-h-screen bg-gray-50 px-4 py-16">
       <div className="mx-auto max-w-[680px]">
-        <header className="flex items-center justify-between mb-10">
+        <header className="mb-10 flex flex-wrap items-center gap-4">
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">
             ReadingOS
           </h1>
-          <nav className="flex items-center gap-5 text-sm">
-            <Link
-              href="/"
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              Library
-            </Link>
-            <span className="text-gray-900 font-medium">Highlights</span>
+          <nav className="flex flex-1 items-center justify-between gap-6 text-sm">
+            <div className="flex items-center gap-4 rounded-full border border-gray-200 bg-white p-1">
+              <Link
+                href="/"
+                className="rounded-full px-3 py-1 text-xs font-semibold text-gray-500 hover:text-gray-800 transition-colors"
+              >
+                Library
+              </Link>
+              <span className="rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white">
+                Highlights
+              </span>
+              <Link
+                href="/insights"
+                className="rounded-full px-3 py-1 text-xs font-semibold text-gray-500 hover:text-gray-800 transition-colors"
+              >
+                Insights
+              </Link>
+            </div>
           </nav>
         </header>
 
@@ -117,6 +130,14 @@ export default async function HighlightsPage() {
                   </span>
                 </div>
                 <div className="space-y-4">
+                  <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 shadow-sm">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                      Note
+                    </div>
+                    <div className="mt-1 whitespace-pre-wrap text-sm text-gray-700">
+                      {group.note?.trim() ? group.note : "—"}
+                    </div>
+                  </div>
                   {group.highlights.map((h) => (
                     <HighlightCard
                       key={h.id}

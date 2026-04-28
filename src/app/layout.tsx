@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Source_Serif_4, Inter } from "next/font/google";
 import "./globals.css";
+import PwaRegister from "@/components/PwaRegister";
 
 const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
@@ -28,7 +29,10 @@ export default function RootLayout({
       lang="en"
       className={`${sourceSerif.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-white text-gray-900">{children}</body>
+      <body className="min-h-full bg-white text-gray-900">
+        <PwaRegister />
+        {children}
+      </body>
     </html>
   );
 }

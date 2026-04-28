@@ -20,7 +20,6 @@ function replaceCidImages(html: string, attachments: Attachment[]): string {
 }
 
 function stripGmailForwardHeader(html: string): string {
-  // Remove the "---------- Forwarded message ---------\nFrom: ...\nDate: ..." block
   return html.replace(
     /<div[^>]*class="[^"]*gmail_attr[^"]*"[^>]*>[\s\S]*?<\/div>/gi,
     ""
@@ -34,16 +33,6 @@ export async function POST(req: NextRequest) {
   if (!secret || authHeader !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  // Auto-resolve the single user's ID using the service role admin API
-  const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
-  if (usersError || !users.length) {
-    return NextResponse.json(
-      { error: "No authenticated users found — log in first" },
-      { status: 500 }
-    );
-  }
-  const systemUserId = users[0].id;
 
   let body: {
     subject?: string;
@@ -63,13 +52,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const title = body.subject?.trim() || "Untitled Email";
-
-  // Pipedream sends from as {value: [{address, name}], text, html}
-  const senderEmail =
+  const fromAddress =
     body.from?.value?.[0]?.address ||
     body.from?.email ||
     null;
+
+  if (!fromAddress) {
+    return NextResponse.json({ error: "No sender address" }, { status: 400 });
+  }
+
+  const { data: tokenRow } = await supabase
+    .from("user_tokens")
+    .select("user_id")
+    .eq("sender_email", fromAddress)
+    .single();
+
+  if (!tokenRow) {
+    return NextResponse.json({ error: "Unregistered sender" }, { status: 404 });
+  }
+
+  const title = body.subject?.trim() || "Untitled Email";
 
   let contentHtml = body.html || null;
 
@@ -81,20 +83,19 @@ export async function POST(req: NextRequest) {
   }
 
   const contentText = body.text || null;
-  const textForCount = contentText || "";
-  const wordCount = textForCount.trim().split(/\s+/).filter(Boolean).length;
+  const wordCount = (contentText || "").trim().split(/\s+/).filter(Boolean).length;
 
   const { data, error } = await supabase
     .from("articles")
     .insert({
       title,
-      source_url: senderEmail ? `mailto:${senderEmail}` : null,
-      source_domain: senderEmail,
+      source_url: `mailto:${fromAddress}`,
+      source_domain: fromAddress,
       content_html: contentHtml,
       content_text: contentText,
       type: "email",
       word_count: wordCount || null,
-      user_id: systemUserId,
+      user_id: tokenRow.user_id,
     })
     .select("id, title")
     .single();

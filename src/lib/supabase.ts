@@ -18,6 +18,9 @@ export interface Article {
   source_tags: string[];
   theme_tags: string[];
   user_id: string | null;
+  read_status: "in_progress" | "completed";
+  read_at: string | null;
+  note: string | null;
 }
 
 export interface Highlight {

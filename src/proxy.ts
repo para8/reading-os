@@ -31,6 +31,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/login") ||
     pathname.startsWith("/auth/callback") ||
     pathname.startsWith("/api/save") ||
+    pathname.startsWith("/api/extension") ||
     pathname.startsWith("/api/bookmarklet") ||
     pathname.startsWith("/api/email");
 

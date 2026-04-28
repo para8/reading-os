@@ -1,6 +1,8 @@
 import Link from "next/link";
 import PasteForm from "@/components/PasteForm";
 import BookmarkletInstaller from "@/components/BookmarkletInstaller";
+import ExtensionInstaller from "@/components/ExtensionInstaller";
+import EmailForwardingConfig from "@/components/EmailForwardingConfig";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { supabase } from "@/lib/supabase";
 import { redirect } from "next/navigation";
@@ -19,7 +21,7 @@ export default async function SavePage() {
 
   const { data: existing } = await supabase
     .from("user_tokens")
-    .select("bookmarklet_token")
+    .select("bookmarklet_token, sender_email")
     .eq("user_id", user.id)
     .single();
 
@@ -27,8 +29,14 @@ export default async function SavePage() {
 
   if (!token) {
     token = crypto.randomUUID();
-    await supabase.from("user_tokens").insert({ user_id: user.id, bookmarklet_token: token });
+    await supabase.from("user_tokens").insert({
+      user_id: user.id,
+      bookmarklet_token: token,
+      sender_email: user.email ?? null,
+    });
   }
+
+  const senderEmail = (existing?.sender_email as string | null) ?? user.email ?? "";
 
   return (
     <main className="min-h-screen px-4 py-12">
@@ -52,7 +60,11 @@ export default async function SavePage() {
         <div className="space-y-8">
           <BookmarkletInstaller appUrl={appUrl} token={token} />
 
-          <div>
+          <ExtensionInstaller appUrl={appUrl} token={token} />
+
+          <EmailForwardingConfig defaultEmail={senderEmail} />
+
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
             <h2 className="text-base font-semibold text-gray-900 mb-1">
               Paste text
             </h2>

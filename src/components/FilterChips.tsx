@@ -3,10 +3,13 @@
 import { useRouter } from "next/navigation";
 
 interface FilterChipsProps {
+  totalArticles: number;
+  completedCount: number;
   sourceTagCounts: Record<string, number>;
   themeTagCounts: Record<string, number>;
   activeSourceTag?: string;
   activeThemeTag?: string;
+  activeStatus?: string;
 }
 
 function Chip({
@@ -38,28 +41,64 @@ function Chip({
 }
 
 export default function FilterChips({
+  totalArticles,
+  completedCount,
   sourceTagCounts,
   themeTagCounts,
   activeSourceTag,
   activeThemeTag,
+  activeStatus,
 }: FilterChipsProps) {
   const router = useRouter();
 
   const sourceTags = Object.entries(sourceTagCounts).sort((a, b) => b[1] - a[1]);
   const themeTags = Object.entries(themeTagCounts).sort((a, b) => b[1] - a[1]);
+  const showStatus = totalArticles > 0 || activeStatus === "completed";
 
-  if (sourceTags.length === 0 && themeTags.length === 0) return null;
+  if (!showStatus && sourceTags.length === 0 && themeTags.length === 0) return null;
 
-  function navigate(param: "source_tag" | "theme_tag", value: string, isActive: boolean) {
-    if (isActive) {
-      router.push("/");
-    } else {
-      router.push(`/?${param}=${encodeURIComponent(value)}`);
+  function navigate(
+    param: "source_tag" | "theme_tag" | "status",
+    value: string,
+    isActive: boolean
+  ) {
+    const params = new URLSearchParams();
+
+    if (param !== "source_tag" && activeSourceTag) {
+      params.set("source_tag", activeSourceTag);
     }
+    if (param !== "theme_tag" && activeThemeTag) {
+      params.set("theme_tag", activeThemeTag);
+    }
+    if (param !== "status" && activeStatus) {
+      params.set("status", activeStatus);
+    }
+
+    if (!isActive) {
+      params.set(param, value);
+    }
+
+    const query = params.toString();
+    router.push(query ? `/?${query}` : "/");
   }
 
   return (
     <div className="mb-8 space-y-2">
+      {showStatus && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider select-none w-14 shrink-0">
+            status
+          </span>
+          <Chip
+            label="completed"
+            count={completedCount}
+            active={activeStatus === "completed"}
+            onClick={() =>
+              navigate("status", "completed", activeStatus === "completed")
+            }
+          />
+        </div>
+      )}
       {sourceTags.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider select-none w-14 shrink-0">
