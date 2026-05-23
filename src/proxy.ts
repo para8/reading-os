@@ -33,7 +33,11 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/api/save") ||
     pathname.startsWith("/api/extension") ||
     pathname.startsWith("/api/bookmarklet") ||
-    pathname.startsWith("/api/email");
+    pathname.startsWith("/api/email") ||
+    pathname === "/manifest.webmanifest" ||
+    pathname === "/sw.js" ||
+    pathname.startsWith("/share") ||
+    pathname.startsWith("/share-receiver");
 
   if (!user && !isPublic) {
     return NextResponse.redirect(new URL("/login", request.url));
